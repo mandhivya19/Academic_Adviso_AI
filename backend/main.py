@@ -1,28 +1,26 @@
-from backend.recommender import recommend_course
 from fastapi import FastAPI
-from backend.db import students_collection
+from backend.llm import ask_ai       # Chat function import
+from backend.db import students_collection # Database import
 
 app = FastAPI()
 
+# 1. Home Route
 @app.get("/")
 def home():
-    return {"message": "API running"}
+    return {"message": "Academic Advisor API Running"}
 
-@app.get("/students")
-def get_students():
-    students = list(students_collection.find({}, {"_id": 0}))
-    return {"students": students}
-@app.get("/recommend")
-def recommend():
+# 2. Chat Route (AI kitta pesuradhukku)
+@app.get("/chat")
+def chat(q: str):
+    response = ask_ai(q)
+    return {"response": response}
 
-    students = list(students_collection.find({}, {"_id": 0}))
-
-    results = []
-    for s in students:
-        course = recommend_course(s)
-        results.append({
-            "name": s["name"],
-            "recommended_course": course
-        })
-
-    return {"recommendations": results}
+# 3. Student Snapshot Route (Day 3 Target - Marks edukka)
+@app.get("/student/snapshot")
+def get_snapshot(name: str):
+    # Database-la student-a thedurom
+    student = students_collection.find_one({"name": name}, {"_id": 0})
+    if student:
+        return {"status": "found", "data": student}
+    else:
+        return {"status": "error", "message": "Student not found"}
